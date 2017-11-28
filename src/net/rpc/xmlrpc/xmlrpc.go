@@ -13,14 +13,15 @@ import (
     "time"
 )
 
-func Request(url string, method string, params ...interface{}) ([]interface{}) {
+func Request(url string, method string, params ...interface{}) ([]interface{}, error) {
     request := Serialize(method, params)
     //log.Printf("%s", request)
     buffer := bytes.NewBuffer([]byte(request))
 
     response, err := http.Post(url, "text/xml", buffer)
     if err != nil {
-        log.Fatal(err)
+        log.Printf("xmlrpc-go post error: %s\n", err)
+	return nil, err
     }
     defer response.Body.Close()
 
@@ -83,10 +84,11 @@ func unserialize(value Value) (interface{}) {
     return nil
 }
 
-func Unserialize(buffer io.ReadCloser) ([]interface{}) {
+func Unserialize(buffer io.ReadCloser) ([]interface{}, error) {
     body, err := ioutil.ReadAll(buffer)
     if err != nil {
-        log.Fatal(err)
+        fmt.Printf("xmlrpc-go unserialize: %s\n", err)
+	return nil, err
     }
     //log.Printf("%s", body)
 
@@ -98,7 +100,7 @@ func Unserialize(buffer io.ReadCloser) ([]interface{}) {
         result[i] = unserialize(param.Value)
     }
 
-    return result
+    return result, nil
 }
 
 func Serialize(method string, params []interface{}) (string) {
